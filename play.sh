@@ -54,6 +54,7 @@ Options:
     --resume            Resume episode from where we left off
     --window            Start in windowed mode.
     --full              Start in fullscreen.
+    --screen            choose which screen to play in by number.
     -h, --help          Show this help
 EOF
 }
@@ -76,6 +77,7 @@ select=false
 random=false
 window=false
 fullscreen=false
+screen_ID=
 
 while (($#)); do
     case "$1" in
@@ -127,6 +129,14 @@ while (($#)); do
         --full)
             fullscreen=true
             shift
+            ;;
+        --screen)
+            if (($# < 2)); then
+                echo "error: --title requires an argument" >&2
+                exit 2
+            fi
+            screen_ID=$2
+            shift 2
             ;;
         -*)
             echo "error: unknown option: $1" >&2
@@ -198,6 +208,13 @@ if [[ $resume == false && $restart == false ]]; then
     fi
 fi
 
+# mpv has a property called screen-name which we can read on video completed
+# that is supposed to tell us which screen the video is playing on. However,
+# mpv doesn't really seem to know. We want to make it so that the next video
+# continues playing on the same screen as the previous, but this is an
+# incomplete feature at the moment.
+screenname=
+
 screenmode=window
 
 if [[ $fullscreen == true ]]; then
@@ -237,8 +254,20 @@ state_directory="${XDG_STATE_HOME:-$HOME/.local/state}/play.sh"
 mkdir -p "$state_directory"
 
 # all the files that we use in this script
-state_file="$state_directory/state.json"
-screen_file="$state_directory/screen"
+state_file="$state_directory/series.json"
+screen_file="$state_directory/screen.json"
+
+# register the name of the file as an env variable.
+export PLAY_SH_SCREEN="$screen_file"
+
+load_screen() {
+    if [[ ! -f $screen_file ]]; then
+        return
+    fi
+
+    screenmode=$(jq -r '.mode // empty' "$screen_file")
+    screenname=$(jq -r '.name // empty' "$screen_file")
+}
 
 load_current() {
     local directory=$1
@@ -291,17 +320,6 @@ erase_current() {
     fi
 }
 
-load_screen_mode() {
-    if [[ -f $screen_file ]]; then
-        cat "$screen_file"
-    else
-        echo "no screen file found"
-        printf '%s\n' window
-    fi
-}
-
-export PLAY_SH_SCREEN="$screen_file"
-
 ################################ lua script ###################################
 
 # mpv can accept scripts to run on exit. We have
@@ -333,14 +351,22 @@ local function save_screen_state()
     end
 
     local fullscreen = mp.get_property_bool("fullscreen", false)
+    local screenname = mp.get_property("screen-name", "")
+
+    local screenmode
+    if fullscreen then
+        screenmode = "full"
+    else
+        screenmode = "window"
+    end
 
     local f = io.open(screen_file, "w")
     if f then
-        if fullscreen then
-            f:write("full\n")
-        else
-            f:write("window\n")
-        end
+        f:write("{\n")
+        f:write('    "mode": "' .. screenmode .. '",\n')
+        f:write('    "name": "' .. screenname .. '"\n')
+        f:write('    "id": "' .. screenname .. '"\n')
+        f:write("}\n")
         f:close()
     end
 end
@@ -432,12 +458,14 @@ while true; do
         --script="$lua_script"
     )
 
-    echo "preparing args; screenmode = $screenmode"
-
     if [[ $screenmode == window ]]; then
         mpv_args+=(--fullscreen=no)
     elif [[ $screenmode == full ]]; then
         mpv_args+=(--fullscreen=yes)
+    fi
+
+    if [[ -n $screen_ID ]]; then
+        mpv_args+=(--screen="$screen_ID")
     fi
 
     if $restart == true ; then
@@ -503,6 +531,9 @@ while true; do
     #if we continue, we always start the next episode from the beginnig.
     restart=true
 
-    # load the screen mode on which the last instance of mpv exited.
-    screenmode=$(load_screen_mode)
+    # load the screen state on which the last instance of mpv exited.
+    # this will set screenmode and screenname.
+    load_screen
+
+    echo "screen mode is now $screenmode and screenname is $screenname"
 done

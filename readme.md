@@ -22,38 +22,20 @@ Designed to work with [mpv] media player.
 The script looks in directory `dir` recursively and finds all movie files. Files will be 
 organized in natural order (alphabetical and numeric)
 
-<pre>
-play.sh StarTrek                         Play the current video, resuming where you left off.
-                                         If you watch the video to the end, then the next video
-                                         will load next time. 
-
-play.sh StarTrek --continue              If the media player reaches the end of the video, play
-                                         the next video from the beginning. Continue playing 
-                                         the series until the user exits the media player.
-
-play.sh StarTrek --start-over            Start at the beginning of first video.
-
-play.sh StarTrek --name brain            Play Spock's Brain. If more than one video matches the
-                                         title query, a list of matching titles is presented to
-                                         the user in an interactive list. 
-
-play.sh StarTrek --title brain           Same as name. 
-                                      
-play.sh StarTrek --select                Select from the whole series. 
-
-play.sh StarTrek --random                Play a random episode.
-
-play.sh StarTrek --restart               Restart the video from the beginning rather than 
-                                         resuming where you left off. 
-                                         
-play.sh StarTrek --title brain --resume  With --random, --select, --title, or --start-over, 
-                                         the default is to play the video from the beginning. 
-                                         Use resume to play where you left off instead. 
-
-play.sh StarTrek --full                  Start the media player fullscreen.
-
-play.sh StarTrek --windowed              Start the media player in windowed mode (default).
-</pre>
+| Command | Description |
+|---|---|
+| `play.sh StarTrek` | Play the current video, resuming where you left off. If you watch the video to the end, the next video will load next time. |
+| `play.sh StarTrek --continue` | If the media player reaches the end of the video, play the next video from the beginning. Continue until the user exits the media player. |
+| `play.sh StarTrek --start-over` | Start with the first video. |
+| `play.sh StarTrek --name brain` | Play "Spock's Brain". If more than one video matches, present the matching titles for interactive selection. |
+| `play.sh StarTrek --title brain` | Same as `--name`. |
+| `play.sh StarTrek --select` | Select from the whole series. |
+| `play.sh StarTrek --random` | Play a random episode. |
+| `play.sh StarTrek --restart` | Restart the video from the beginning rather than resuming where you left off. |
+| `play.sh StarTrek --name brain --resume` | Selection options normally start the selected video from the beginning. Use `--resume` to resume it where you left off. |
+| `play.sh StarTrek --window` | Start the media player in a window. |
+| `play.sh StarTrek --full` | Start the media player fullscreen. |
+| `play.sh StarTrek --screen 1` | Play on the 2nd monitor. (0 for first monitor.) |
 
 ## Installation
 
